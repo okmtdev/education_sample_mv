@@ -1,0 +1,39 @@
+import season from './season.js';
+import storyMemory from './storyMemory.js';
+import leftRight from './leftRight.js';
+import sequence from './sequence.js';
+import sameShape from './sameShape.js';
+import folktale from './folktale.js';
+import shiritori from './shiritori.js';
+import missingPiece from './missingPiece.js';
+import blocks from './blocks.js';
+import order from './order.js';
+
+export const TYPES = [
+  season,
+  storyMemory,
+  leftRight,
+  sequence,
+  sameShape,
+  folktale,
+  shiritori,
+  missingPiece,
+  blocks,
+  order,
+];
+
+export const TYPE_BY_ID = Object.fromEntries(TYPES.map(t => [t.id, t]));
+
+// 「おすすめ」構成 (記憶・常識・空間把握・言語・数量 をバランス良く、約10問)
+export const RECOMMENDED = {
+  season: 1,
+  storyMemory: 1,
+  leftRight: 1,
+  sequence: 1,
+  sameShape: 1,
+  folktale: 1,
+  shiritori: 1,
+  missingPiece: 1,
+  blocks: 1,
+  order: 1,
+};
