@@ -1,6 +1,7 @@
-// LocalStorage に過去の成績を保存。キーは版管理のため "mk-" プレフィックス。
+// LocalStorage に過去の成績・設定を保存。キーは版管理のため "mk-" プレフィックス。
 const KEY_SESSIONS = 'mk-sessions-v1';
 const KEY_STATS = 'mk-stats-v1';
+const KEY_CUSTOM = 'mk-custom-v1';
 
 function read(key, fallback) {
   try {
@@ -27,6 +28,14 @@ export function loadStats() {
   return read(KEY_STATS, {});
 }
 
+export function loadCustomBreakdown() {
+  return read(KEY_CUSTOM, null);
+}
+
+export function saveCustomBreakdown(breakdown) {
+  write(KEY_CUSTOM, breakdown);
+}
+
 /**
  * session = {
  *   startedAt, finishedAt, mode, typeBreakdown: { [typeId]: count },
@@ -49,7 +58,18 @@ export function saveSession(session) {
   write(KEY_STATS, stats);
 }
 
-export function clearAll() {
-  localStorage.removeItem(KEY_SESSIONS);
-  localStorage.removeItem(KEY_STATS);
+// 指定した 1 セッションを削除。統計は残りのセッションから再計算する。
+export function deleteSession(startedAt) {
+  const sessions = loadSessions().filter(s => s.startedAt !== startedAt);
+  write(KEY_SESSIONS, sessions);
+  const stats = {};
+  for (const s of sessions) {
+    for (const r of (s.results || [])) {
+      const st = stats[r.typeId] ?? { correct: 0, total: 0 };
+      st.total += 1;
+      if (r.correct) st.correct += 1;
+      stats[r.typeId] = st;
+    }
+  }
+  write(KEY_STATS, stats);
 }

@@ -1,6 +1,13 @@
 import { TYPES, TYPE_BY_ID, RECOMMENDED } from './questions/index.js';
 import { el, clear, shuffle, choice, formatDate, svg } from './util.js';
-import { saveSession, loadSessions, loadStats, clearAll } from './storage.js';
+import {
+  saveSession,
+  loadSessions,
+  loadStats,
+  deleteSession,
+  loadCustomBreakdown,
+  saveCustomBreakdown,
+} from './storage.js';
 
 const root = document.getElementById('app');
 
@@ -46,26 +53,29 @@ function modeCard(emoji, title, desc, onClick) {
 // -------------------------------------------------------------------
 function renderCustom() {
   clear(root);
+  const saved = loadCustomBreakdown() || {};
   const state = {};
-  TYPES.forEach(t => { state[t.id] = 0; });
+  TYPES.forEach(t => { state[t.id] = Math.max(0, Math.min(20, Number(saved[t.id]) || 0)); });
 
   const card = el('div', { class: 'card' }, [
     el('h2', { text: 'もんだいを くみあわせよう' }),
-    el('p', { class: 'muted', text: '「＋」「−」で かずを きめてから はじめてね。' }),
+    el('p', { class: 'muted', text: '「＋」「−」で かずを きめてね。せっていは つぎかいも のこるよ。' }),
   ]);
 
   const form = el('div', { class: 'set-form' });
+  const numSpans = {};
   TYPES.forEach(t => {
-    const numSpan = el('span', { class: 'num', text: '0' });
+    const numSpan = el('span', { class: 'num', text: String(state[t.id]) });
+    numSpans[t.id] = numSpan;
     const inc = el('button', { text: '＋', on: { click: () => {
       if (state[t.id] < 20) state[t.id]++;
       numSpan.textContent = state[t.id];
-      updateTotal();
+      persistAndUpdate();
     }}});
     const dec = el('button', { text: '−', on: { click: () => {
       if (state[t.id] > 0) state[t.id]--;
       numSpan.textContent = state[t.id];
-      updateTotal();
+      persistAndUpdate();
     }}});
     const row = el('div', { class: 'set-row' }, [
       el('div', { class: 'label' }, [
@@ -85,14 +95,26 @@ function renderCustom() {
   card.appendChild(total);
 
   const startBtn = el('button', { class: 'btn', text: '▶ はじめる', attrs: { disabled: 'true' }});
-  startBtn.addEventListener('click', () => startFromBreakdown('custom', state));
+  startBtn.addEventListener('click', () => {
+    saveCustomBreakdown(state);
+    startFromBreakdown('custom', state);
+  });
 
+  const resetBtn = el('button', { class: 'btn ghost', text: 'ぜんぶ 0 に', on: { click: () => {
+    TYPES.forEach(t => { state[t.id] = 0; numSpans[t.id].textContent = '0'; });
+    persistAndUpdate();
+  }}});
   const homeBtn = el('button', { class: 'btn ghost', text: '← もどる', on: { click: renderHome } });
-  card.appendChild(el('div', { class: 'play-footer' }, [homeBtn, startBtn]));
+  card.appendChild(el('div', { class: 'play-footer' }, [
+    el('div', {}, [homeBtn, el('span', { text: ' ' }), resetBtn]),
+    startBtn,
+  ]));
 
   root.appendChild(card);
+  persistAndUpdate();
 
-  function updateTotal() {
+  function persistAndUpdate() {
+    saveCustomBreakdown(state);
     const sum = Object.values(state).reduce((a, b) => a + b, 0);
     total.textContent = `ごうけい: ${sum} もん`;
     if (sum > 0) startBtn.removeAttribute('disabled');
@@ -295,7 +317,14 @@ function renderHistory() {
         const t = TYPE_BY_ID[id];
         return t ? `${t.emoji}${t.name}×${n}` : `${id}×${n}`;
       });
-    list.appendChild(el('li', {}, [
+    const delBtn = el('button', {
+      class: 'row-delete',
+      attrs: { 'aria-label': 'このプレイの きろくを けす', title: 'このきろくを けす' },
+      text: '🗑',
+      on: { click: () => confirmDeleteSession(s) },
+    });
+    list.appendChild(el('li', { class: 'with-delete' }, [
+      delBtn,
       el('div', {}, [
         el('div', { text: `${formatDate(s.finishedAt || s.startedAt)}｜モード: ${modeLabel(s.mode)}` }),
         el('div', { class: 'type-chips' }, types.map(tx => el('span', { class: 'chip', text: tx }))),
@@ -307,16 +336,51 @@ function renderHistory() {
   overview.appendChild(list);
 
   overview.appendChild(el('div', { class: 'play-footer' }, [
-    el('button', { class: 'btn warn', text: 'きろくを ぜんぶ けす', on: { click: () => {
-      if (confirm('ほんとうに ぜんぶ けしても いい？ (もとに もどせません)')) {
-        clearAll();
-        renderHistory();
-      }
-    }}}),
+    el('span'),
     el('button', { class: 'btn', text: 'ホームへ', on: { click: renderHome } }),
   ]));
 
   root.appendChild(overview);
+}
+
+function confirmDeleteSession(session) {
+  const pct = session.total ? Math.round((session.correct / session.total) * 100) : 0;
+  openModal({
+    title: 'このきろくを けしますか？',
+    body: el('div', {}, [
+      el('p', { text: `${formatDate(session.finishedAt || session.startedAt)}｜モード: ${modeLabel(session.mode)}` }),
+      el('p', { text: `けっか: ${session.correct} / ${session.total} (${pct}%)` }),
+      el('p', { class: 'muted', text: 'いちど けすと もとに もどせません。' }),
+    ]),
+    confirmLabel: 'けす',
+    confirmClass: 'btn warn',
+    onConfirm: () => {
+      deleteSession(session.startedAt);
+      renderHistory();
+    },
+  });
+}
+
+function openModal({ title, body, confirmLabel = 'OK', confirmClass = 'btn', onConfirm }) {
+  const overlay = el('div', { class: 'modal-overlay', on: { click: (e) => {
+    if (e.target === overlay) close();
+  } } });
+  const box = el('div', { class: 'modal-box' });
+  box.appendChild(el('h3', { class: 'modal-title', text: title }));
+  if (body) box.appendChild(body);
+  const actions = el('div', { class: 'modal-actions' }, [
+    el('button', { class: 'btn ghost', text: 'やめる', on: { click: close } }),
+    el('button', { class: confirmClass, text: confirmLabel, on: { click: () => {
+      close();
+      if (onConfirm) onConfirm();
+    } } }),
+  ]);
+  box.appendChild(actions);
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+  function close() {
+    if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+  }
 }
 
 function modeLabel(mode) {

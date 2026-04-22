@@ -448,8 +448,71 @@ body {
   border-bottom: 1px solid #eef1f8;
   align-items: center;
 }
+.history-list li.with-delete {
+  grid-template-columns: auto 1fr auto auto;
+}
 .history-list .pct {
   font-weight: bold;
+}
+.row-delete {
+  background: transparent;
+  border: 1px solid #e8ecf5;
+  color: #6b7a96;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.row-delete:hover {
+  background: #fde0e0;
+  color: var(--warn);
+  border-color: var(--warn);
+}
+
+/* ---------- modal ---------- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(35, 49, 74, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 100;
+  animation: fade 0.15s ease;
+}
+.modal-box {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 22px;
+  box-shadow: var(--shadow-lg);
+  max-width: 420px;
+  width: 100%;
+  animation: pop 0.2s ease;
+}
+.modal-title {
+  margin: 0 0 10px;
+  font-size: 20px;
+}
+.modal-box .muted {
+  color: var(--muted);
+  font-size: 14px;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 14px;
+}
+@keyframes fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 .type-chips {
   display: flex;
