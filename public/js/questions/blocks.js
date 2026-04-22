@@ -28,17 +28,10 @@ const SHAPES = [
   { diff: 2, h: [[2, 1], [2, 1]] },
   { diff: 2, h: [[2, 2, 1], [1, 1, 0]] },
   { diff: 2, h: [[3, 2], [1, 0]] },
-  // むずかしい (8〜13 個、一部見えない ところ あり)
-  { diff: 3, h: [[2, 2, 2], [2, 2, 1]] },               // 11
+  // むずかしい (7〜9 個、一部見えない ところ あり)
   { diff: 3, h: [[3, 2, 1], [2, 1, 0]] },               // 9
-  { diff: 3, h: [[2, 2], [2, 2], [1, 1]] },             // 10
   { diff: 3, h: [[4, 2], [2, 1]] },                     // 9
-  { diff: 3, h: [[3, 3], [2, 2]] },                     // 10
-  { diff: 3, h: [[1, 2, 3], [1, 2, 2], [1, 1, 1]] },    // 14
-  { diff: 3, h: [[2, 2, 2], [1, 2, 2], [1, 1, 1]] },    // 14
-  { diff: 3, h: [[3, 2, 1], [3, 2, 1], [3, 2, 1]] },    // 18 (大ピラミッド風)
-  { diff: 3, h: [[1, 1, 1, 1], [0, 1, 1, 0], [0, 0, 1, 0]] }, // 8
-  { diff: 3, h: [[2, 2, 2, 2], [1, 0, 0, 1]] },         // 10
+  { diff: 3, h: [[1, 1, 1, 1], [0, 1, 1, 0], [0, 0, 1, 0]] }, // 7
 ];
 
 function heightsToCells(h) {
@@ -157,6 +150,8 @@ function drawStack(h) {
   return s;
 }
 
+export { drawStack };
+
 export default {
   id: 'blocks',
   name: '積木',
@@ -165,9 +160,8 @@ export default {
   generate() {
     const shape = SHAPES[rand(SHAPES.length)];
     const n = totalBlocks(shape.h);
-    // 正解の前後数値をダミーに。個数が大きい問題では 乱れ幅も 大きく。
-    const spread = n >= 10 ? [-3, -2, -1, 1, 2, 3, 4] : [-2, -1, 1, 2, 3];
-    const wrongPool = spread.map(d => n + d).filter(v => v >= 1 && v <= 25 && v !== n);
+    const spread = [-2, -1, 1, 2, 3];
+    const wrongPool = spread.map(d => n + d).filter(v => v >= 1 && v <= 15 && v !== n);
     const wrongs = shuffle(wrongPool).slice(0, 3);
     return {
       prompt: 'つみきは ぜんぶで なんこ あるかな？',

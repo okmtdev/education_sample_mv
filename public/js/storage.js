@@ -3,6 +3,8 @@ const KEY_SESSIONS = 'mk-sessions-v1';
 const KEY_STATS = 'mk-stats-v1';
 const KEY_CUSTOM = 'mk-custom-v1';
 const KEY_GEMINI = 'mk-gemini-key-v1';
+const KEY_CHILD_NAME = 'mk-child-name-v1';
+const KEY_CHILD_GENDER = 'mk-child-gender-v1';
 
 function read(key, fallback) {
   try {
@@ -47,6 +49,26 @@ export function saveGeminiKey(key) {
   } else {
     write(KEY_GEMINI, String(key));
   }
+}
+
+export function loadChildName() {
+  return read(KEY_CHILD_NAME, '') || '';
+}
+
+export function saveChildName(name) {
+  if (name == null || name === '') {
+    localStorage.removeItem(KEY_CHILD_NAME);
+  } else {
+    write(KEY_CHILD_NAME, String(name));
+  }
+}
+
+export function loadChildGender() {
+  return read(KEY_CHILD_GENDER, 'chan') || 'chan';
+}
+
+export function saveChildGender(g) {
+  write(KEY_CHILD_GENDER, String(g));
 }
 
 /**
