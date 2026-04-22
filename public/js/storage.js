@@ -2,6 +2,7 @@
 const KEY_SESSIONS = 'mk-sessions-v1';
 const KEY_STATS = 'mk-stats-v1';
 const KEY_CUSTOM = 'mk-custom-v1';
+const KEY_GEMINI = 'mk-gemini-key-v1';
 
 function read(key, fallback) {
   try {
@@ -34,6 +35,18 @@ export function loadCustomBreakdown() {
 
 export function saveCustomBreakdown(breakdown) {
   write(KEY_CUSTOM, breakdown);
+}
+
+export function loadGeminiKey() {
+  return read(KEY_GEMINI, '') || '';
+}
+
+export function saveGeminiKey(key) {
+  if (key == null || key === '') {
+    localStorage.removeItem(KEY_GEMINI);
+  } else {
+    write(KEY_GEMINI, String(key));
+  }
 }
 
 /**
